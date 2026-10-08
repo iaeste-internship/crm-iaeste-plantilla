@@ -6,32 +6,41 @@ CRM para que el equipo de empresas de un comité de IAESTE reparta, contacte y h
 - **Backend:** Supabase (PostgreSQL + Auth + Row Level Security)
 - **Hosting:** Vercel
 
-Cada comité monta **su propia copia**: su propio Supabase y su propio despliegue en Vercel. Ningún comité ve los datos de otro.
+Cada comité monta **su propia copia**: su propio Supabase y su propio despliegue en Vercel. Ningún comité ve los datos de otro, y este repositorio no contiene datos de nadie.
 
 ---
 
-## Qué necesitas
+## Antes de empezar: qué tiene que poner tu comité
 
-- Una cuenta de **GitHub**
-- Una cuenta de **Supabase** (el plan gratuito sirve)
-- Una cuenta de **Vercel** (el plan gratuito sirve)
+Este repositorio trae el código y las instrucciones. Lo demás lo aporta cada comité:
 
-Consejo: crea las tres con un **email compartido del comité** (no el personal de nadie) y con email + contraseña, no con "Continuar con GitHub". Así, cuando cambie la junta, el acceso no se pierde.
+| Qué | Para qué |
+|---|---|
+| **Cuentas de GitHub, Supabase y Vercel** (las tres gratis) | Guardar tu copia del código, la base de datos y la web |
+| **Un email compartido del comité** | Crear esas tres cuentas con él (ver consejo abajo) |
+| **Una persona que siga esta guía** | No hace falta saber programar, pero sí moverse por paneles web sin perderse. Calcula 20–30 minutos |
+| **Vuestro Excel de empresas** | Cargarlo en el paso 7 |
+| **Vuestros logos** | Sustituir los de IAESTE Madrid que trae la plantilla (paso 6) |
+| **Vuestras reglas de puntos** | Configurarlas en el paso 6 |
+
+> **Consejo:** crea las tres cuentas con un **email compartido del comité** (no el personal de nadie) y con **email + contraseña**, nunca con "Continuar con GitHub". Guarda las contraseñas en un sitio que herede la siguiente junta. Si las cuentas son personales, el CRM se queda huérfano cuando esa persona se va.
 
 ---
 
-## Instalación (unos 20 minutos)
+## Instalación
 
 ### 1. Copia el código
 
-En la página de este repositorio pulsa **Use this template → Create a new repository** y créalo en la cuenta de tu comité.
+Inicia sesión en GitHub y, en la página de este repositorio, pulsa **Use this template → Create a new repository**. Créalo en la cuenta de tu comité (puede ser privado).
 
 ### 2. Crea la base de datos
 
 1. En Supabase, crea un proyecto nuevo (región: *West EU*).
 2. Ve a **SQL Editor → New query**, pega el contenido entero de `supabase/schema.sql` y pulsa **Run**.
-3. (Recomendado) Ve a **Authentication → Hooks → Before User Created**, elige la función `hook_antes_de_crear_usuario` y actívalo. Bloquea registros con emails temporales.
-4. En **Authentication → Sign In / Providers → Email**, desactiva *Confirm email* si no quieres que los miembros tengan que confirmar el correo para entrar.
+3. **Desactiva la confirmación por email:** **Authentication → Sign In / Providers → Email** → desactiva *Confirm email*.
+   El servidor de correo que Supabase trae por defecto solo envía **unos pocos emails por hora**. Si lo dejas activado y se registra medio equipo a la vez, muchos no recibirán el correo de confirmación y no podrán entrar.
+   *(Si más adelante configuráis vuestro propio servidor de correo en Authentication → Emails → SMTP, podéis volver a activarlo.)*
+4. *(Recomendado)* **Authentication → Hooks → Before User Created** → elige la función `hook_antes_de_crear_usuario` y actívalo. Bloquea registros con emails temporales.
 
 ### 3. Copia las claves de Supabase
 
@@ -59,33 +68,43 @@ En **Project Settings → API** copia:
 
 Entra en `https://tu-comite-crm.vercel.app/?registro` y regístrate. **La primera cuenta que se registra es admin automáticamente**; todas las siguientes entran como miembro y puedes ascenderlas desde la pestaña *Equipo*.
 
-### 6. Personaliza tu comité
+### 6. Personaliza tu comité — ¡no te lo saltes!
 
-Edita **`src/config.js`**. Ahí está todo lo adaptable, sin tocar el resto del código:
+La plantilla viene configurada **para IAESTE Madrid**. Si no cambias esto, los emails que vuestros miembros manden a empresas irán firmados como *"IAESTE Telecomunicación Madrid"* y con el email de ofertas de Madrid.
+
+Edita **`src/config.js`** (en GitHub: abre el archivo → icono del lápiz → *Commit changes*):
 
 | Qué | Dónde en `config.js` |
 |---|---|
-| Nombre, email, dirección y web del comité (firma de los emails a empresas) | `COMITE` |
+| **Nombre, email de ofertas, dirección y web** del comité (firma de los emails a empresas) | `COMITE` |
 | Estados por los que pasa una empresa | `ESTADOS` |
 | Apartados de la lista (disponibles, seguimiento, cerradas…) | `GRUPOS` |
 | Cuántas empresas se reparten/quitan de golpe | `LOTE` |
-| Puntos por estado | `PUNTOS_ESTADO` |
-| Bonus de seguimiento quincenal | `PUNTOS.quincena` y `QUINCENA` |
+| **Puntos por estado** | `PUNTOS_ESTADO` |
+| Bonus de seguimiento quincenal (pon `0` para quitarlo) | `PUNTOS.quincena` y `QUINCENA` |
 | Días sin movimiento para avisar | `SIN_MOVER` |
 
-Sustituye también los logos en `public/`:
+Sustituye también los logos en `public/` (mismo nombre de archivo):
 - `logo-iaeste.png`: logo blanco de la cabecera
-- `logo-iaeste-madrid.png`: logo de la firma del email (o cambia `COMITE.logoEmail`)
+- `logo-iaeste-madrid.png`: logo de la firma del email. Cambia también `COMITE.logoEmail` para que apunte a **tu** dirección (`https://tu-comite-crm.vercel.app/logo-iaeste-madrid.png`)
 
-Guarda, haz commit y push a GitHub: Vercel vuelve a desplegar solo en un minuto.
+Cada cambio que guardes en GitHub se publica solo en Vercel en un minuto.
+
+#### Sobre el sistema de puntos
+
+`config.js` permite decidir **cuántos puntos vale cada estado** de una empresa (contactada, cerrada, beca…), si hay **bonus por seguimiento quincenal** y cuánto vale. Cada empresa puntúa según su estado actual, para quien la tiene asignada.
+
+Si vuestro sistema es **distinto en su forma** (puntos por reuniones, por llamadas, por actividades que no son empresas, que se acumulen en vez de sustituirse…) no basta con `config.js`: habría que modificar el código. Contacta con IAESTE Madrid antes de empezar.
 
 ### 7. Carga tus empresas
 
-En Supabase, **Table Editor → empresas → Insert → Import data from CSV**. Columnas que entiende:
+Guarda tu Excel como **CSV** y en Supabase ve a **Table Editor → empresas → Insert → Import data from CSV**. Columnas que entiende:
 
 `nombre` (obligatoria), `cif`, `sector`, `contacto`, `email`, `telefono`, `direccion`
 
-Deja `responsable` vacío y `estado` como `sin_contactar`: luego las repartes desde la pestaña *Equipo* con el botón **+5**.
+No incluyas `responsable` ni `estado`: entran sin asignar y como *Sin contactar*, y luego las repartes desde la pestaña *Equipo* con el botón **+5**.
+
+⚠️ Nunca subas el Excel ni el CSV a GitHub: tienen datos de contacto de empresas.
 
 ---
 
@@ -98,6 +117,18 @@ Deja `responsable` vacío y `estado` como `sin_contactar`: luego las repartes de
 
 ---
 
+## Problemas frecuentes
+
+| Problema | Solución |
+|---|---|
+| Alguien se registra pero dice que no le llega el email | Desactiva *Confirm email* (paso 2.3). Para quien ya se registró: Supabase → Authentication → Users → su usuario → *Confirm email* |
+| La pantalla sale en blanco | Revisa en Vercel que las dos variables del paso 4 están bien escritas y vuelve a desplegar (*Deployments → Redeploy*) |
+| Nadie es admin | Supabase → SQL Editor: `update profiles set rol = 'admin' where nombre = 'TU NOMBRE';` |
+| Los emails a empresas salen con datos de Madrid | Te has saltado el paso 6 |
+| No se ve el logo en la firma del email | `COMITE.logoEmail` sigue apuntando a la web de Madrid, o el archivo no está en `public/` |
+
+---
+
 ## Cambios en la base de datos
 
-Si cambias la estructura (nuevas columnas, políticas…), ejecuta el SQL en el SQL Editor **y** actualiza `supabase/schema.sql` en el repositorio para que la siguiente instalación salga igual.
+Si cambias la estructura (nuevas columnas, políticas…), ejecuta el SQL en el SQL Editor **y** actualiza `supabase/schema.sql` en tu repositorio para que, si algún día tenéis que reinstalar, salga igual.
